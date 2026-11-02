@@ -29,9 +29,49 @@ jobs:
           find /opt -name "libnxConfig.cmake" 2>/dev/null || echo "libnxConfig.cmake not found in /opt"
           find /usr -name "libnxConfig.cmake" 2>/dev/null || echo "libnxConfig.cmake not found in /usr"
 
-      - name: Try installing switch-libnx (may fail due to 403)
+      - name: Verify toolchain availability
         run: |
-          dkp-pacman -S --noconfirm switch-libnx 2>&1 || echo "switch-libnx install failed due to 403"
+          which aarch64-none-elf-g++ || echo "WARNING: aarch64-none-elf-g++ not found in PATH"
+          which aarch64-none-elf-cmake || echo "WARNING: aarch64-none-elf-cmake not found in PATH"
+          echo "DEVKITPRO=${DEVKITPRO}"
+          echo "=== Installed packages ==="
+          dkp-pacman -Q 2>/dev/null | head -50 || echo "dkp-pacman not available or no packages"
+          echo "=== DevkitPro dirs ==="
+          ls /opt/devkitpro/ 2>/dev/null || echo "/opt/devkitpro not found"
+          echo "=== Searching for libnxConfig.cmake ==="
+          find /opt -name "libnxConfig.cmake" 2>/dev/null || echo "libnxConfig.cmake not found in /opt"
+          find /usr -name "libnxConfig.cmake" 2>/dev/null || echo "libnxConfig.cmake not found in /usr"
+
+      - name: Try installing switch-libnx (with fallback methods)
+        run: |
+          # Method 1: Try direct pacman install
+          dkp-pacman -S --noconfirm switch-libnx 2>&1 || echo "switch-libnx install failed due to 403, trying alternative..."
+          
+          # Method 2: If failed, try downloading from GitHub releases
+          if ! dkp-pacman -Q | grep -q libnx; then
+            echo "Trying to download libnx from GitHub releases..."
+            LIBNX_VERSION=$(curl -s https://api.github.com/repos/devkitPro/libnx/releases/latest | grep '"tag_name"' | cut -d'"' -f4)
+            if [ -n "$LIBNX_VERSION" ]; then
+              echo "Found libnx version: $LIBNX_VERSION"
+              # Try to find the package URL
+              PACKAGE_URL=$(curl -s "https://api.github.com/repos/devkitPro/libnx/releases/tags/$LIBNX_VERSION" | grep "browser_download_url.*switch.*pkg.tar.zst" | cut -d'"' -f4 | head -1)
+              if [ -n "$PACKAGE_URL" ]; then
+                echo "Downloading libnx package from: $PACKAGE_URL"
+                curl -L -o /tmp/libnx.pkg.tar.zst "$PACKAGE_URL" && \
+                dkp-pacman -U --noconfirm /tmp/libnx.pkg.tar.zst 2>&1 || echo "Manual install also failed"
+              fi
+          fi
+          
+          # Check if libnx is now available
+          if dkp-pacman -Q | grep -q libnx; then
+            echo "libnx successfully installed!"
+          else
+            echo "WARNING: libnx not installed, will try to find it manually"
+            # Check if libnx files exist in standard locations
+            find /opt -name "*libnx*" -type f 2>/dev/null | head -20
+            find /usr -name "*libnx*" -type f 2>/dev/null | head -20
+          fi
+          
           dkp-pacman -Q | grep libnx || true
 
       - name: Configure
