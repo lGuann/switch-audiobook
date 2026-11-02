@@ -16,18 +16,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Initialize devkitPro pacman
+      - name: Verify toolchain availability
         run: |
-          dkp-pacman -Sy --noconfirm || true
-          dkp-pacman -Sy --noconfirm || true
+          which aarch64-none-elf-g++ || echo "WARNING: aarch64-none-elf-g++ not found in PATH"
+          which aarch64-none-elf-cmake || echo "WARNING: aarch64-none-elf-cmake not found in PATH"
+          echo "DEVKITPRO=${DEVKITPRO}"
 
-      - name: Install devkitPro toolchain
+      - name: Try installing optional packages (may fail due to 403)
         run: |
-          dkp-pacman -S --noconfirm switch-dev switch-cmake switch-pkg-config
-
-      - name: Install available libraries
-        run: |
-          set -x
           dkp-pacman -S --noconfirm \
             switch-curl \
             switch-mbedtls \
@@ -42,16 +38,9 @@ jobs:
             switch-harfbuzz \
             dkp-meson-scripts \
             dkp-toolchain-vars \
-            || echo "Some packages may be missing, continuing..."
-          echo "=== Installed packages ==="
-          dkp-pacman -Q | grep switch || true
-
-      - name: Verify toolchain
-        run: |
-          set -x
-          which aarch64-none-elf-g++ || echo "aarch64-none-elf-g++ not found!"
-          which aarch64-none-elf-cmake || echo "aarch64-none-elf-cmake not found!"
-          dkp-pacman -Q | grep switch | head -30
+            2>&1 || true
+          echo "=== Checking what's available ==="
+          dkp-pacman -Q | grep switch | head -30 || true
 
       - name: Configure
         run: |
