@@ -1,0 +1,12 @@
+{
+  "name": "SwitchAudiobook",
+  "title": "Switch Audiobook",
+  "author": "SwitchAudiobook Team",
+  "version": "0.1.0",
+  "description": "Bilibili Audiobook Player for Nintendo Switch",
+  "icon": "icon.jpg",
+  "nacp_version": 0,
+  "nacp_title": "Switch Audiobook",
+  "nacp_author": "SwitchAudiobook Team",
+  "nacp_description": "Bilibili Audiobook Player for Nintendo Switch"
+}
