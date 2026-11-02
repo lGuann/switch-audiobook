@@ -12,109 +12,36 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: devkitpro/devkita64:latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Verify toolchain availability
+      - name: Install required switch packages
         run: |
-          which aarch64-none-elf-g++ || echo "WARNING: aarch64-none-elf-g++ not found in PATH"
-          which aarch64-none-elf-cmake || echo "WARNING: aarch64-none-elf-cmake not found in PATH"
-          echo "DEVKITPRO=${DEVKITPRO}"
-          echo "=== Installed packages ==="
-          dkp-pacman -Q 2>/dev/null | head -50 || echo "dkp-pacman not available or no packages"
-          echo "=== DevkitPro dirs ==="
-          ls /opt/devkitpro/ 2>/dev/null || echo "/opt/devkitpro not found"
-          echo "=== Searching for libnxConfig.cmake ==="
-          find /opt -name "libnxConfig.cmake" 2>/dev/null || echo "libnxConfig.cmake not found in /opt"
-          find /usr -name "libnxConfig.cmake" 2>/dev/null || echo "libnxConfig.cmake not found in /usr"
-
-      - name: Verify toolchain availability
-        run: |
-          which aarch64-none-elf-g++ || echo "WARNING: aarch64-none-elf-g++ not found in PATH"
-          which aarch64-none-elf-cmake || echo "WARNING: aarch64-none-elf-cmake not found in PATH"
-          echo "DEVKITPRO=${DEVKITPRO}"
-          echo "=== Installed packages ==="
-          dkp-pacman -Q 2>/dev/null | head -50 || echo "dkp-pacman not available or no packages"
-          echo "=== DevkitPro dirs ==="
-          ls /opt/devkitpro/ 2>/dev/null || echo "/opt/devkitpro not found"
-          echo "=== Searching for libnxConfig.cmake ==="
-          find /opt -name "libnxConfig.cmake" 2>/dev/null || echo "libnxConfig.cmake not found in /opt"
-          find /usr -name "libnxConfig.cmake" 2>/dev/null || echo "libnxConfig.cmake not found in /usr"
-
-      - name: Verify toolchain availability
-        run: |
-          which aarch64-none-elf-g++ || echo "WARNING: aarch64-none-elf-g++ not found in PATH"
-          which aarch64-none-elf-cmake || echo "WARNING: aarch64-none-elf-cmake not found in PATH"
-          echo "DEVKITPRO=${DEVKITPRO}"
-          echo "=== Installed packages ==="
-          dkp-pacman -Q 2>/dev/null | head -50 || echo "dkp-pacman not available or no packages"
-          echo "=== DevkitPro dirs ==="
-          ls /opt/devkitpro/ 2>/dev/null || echo "/opt/devkitpro not found"
-          echo "=== Searching for libnxConfig.cmake ==="
-          find /opt -name "libnxConfig.cmake" 2>/dev/null || echo "libnxConfig.cmake not found in /opt"
-          find /usr -name "libnxConfig.cmake" 2>/dev/null || echo "libnxConfig.cmake not found in /usr"
-
-      - name: Try installing libnx (with multiple fallback methods)
-        run: |
-          set -e
-          
-          # Check if libnx already installed
-          if dkp-pacman -Q 2>/dev/null | grep -q libnx; then
-            echo "libnx already installed"
-            exit 0
-          fi
-          
-          echo "=== Trying to install libnx ==="
-          
-          # Method 1: Try pacman with --needed flag
-          echo "Method 1: Trying pacman install..."
-          dkp-pacman -S --noconfirm --needed switch-libnx 2>&1 || echo "Pacman install failed, trying alternative..."
-          
-          # Check if installed
-          if dkp-pacman -Q 2>/dev/null | grep -q libnx; then
-            echo "libnx installed successfully via pacman"
-            exit 0
-          fi
-          
-          echo "Pacman failed, trying manual download from GitHub..."
-          
-          # Method 2: Download from GitHub releases
-          echo "Fetching latest libnx release info..."
-          LIBNX_VERSION=$(curl -s https://api.github.com/repos/devkitPro/libnx/releases/latest | grep '"tag_name"' | cut -d'"' -f4)
-          if [ -n "$LIBNX_VERSION" ]; then
-            echo "Found libnx version: $LIBNX_VERSION"
-            # Try to find the package URL
-            PACKAGE_URL=$(curl -s "https://api.github.com/repos/devkitPro/libnx/releases/tags/$LIBNX_VERSION" | grep "browser_download_url.*switch.*pkg.tar.zst" | cut -d'"' -f4 | head -1)
-            if [ -n "$PACKAGE_URL" ]; then
-              echo "Downloading libnx package from: $PACKAGE_URL"
-              curl -L -o /tmp/libnx.pkg.tar.zst "$PACKAGE_URL" && \
-              dkp-pacman -U --noconfirm /tmp/libnx.pkg.tar.zst 2>&1 || echo "Manual install failed"
-            fi
-          fi
-          
-          # Check if installed
-          if dkp-pacman -Q 2>/dev/null | grep -q libnx; then
-            echo "libnx successfully installed!"
-          else
-            echo "WARNING: libnx not installed, will try to find it manually"
-            find /opt -name "*libnx*" -type f 2>/dev/null | head -20 || echo "No libnx files found in /opt"
-            find /usr -name "*libnx*" -type f 2>/dev/null | head -20 || echo "No libnx files found in /usr"
-          fi
-          
-          dkp-pacman -Q | grep libnx || true
+          dkp-pacman -S --noconfirm --needed \
+            switch-libnx \
+            switch-borealis \
+            switch-mpv \
+            switch-openssl \
+            switch-curl \
+            switch-mbedtls \
+            switch-zlib \
+            switch-bzip2 \
+            switch-freetype \
+            switch-nlohmann-json
+          echo "=== Installed switch packages ==="
+          dkp-pacman -Q switch-libnx switch-borealis switch-mpv switch-openssl \
+            switch-curl switch-mbedtls switch-zlib switch-bzip2 switch-freetype switch-nlohmann-json || true
 
       - name: Configure
         run: |
-          set -x
-          mkdir -p build
-          cd build
-          cmake .. -DCMAKE_TOOLCHAIN_FILE=/opt/devkitpro/cmake/Switch.cmake 2>&1 || echo "CMAKE CONFIGURE FAILED"
+          cmake -B build \
+            -DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/Switch.cmake \
+            -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
-        run: |
-          set -x
-          cmake --build build --config Release -j$(nproc) 2>&1 || echo "BUILD FAILED"
+        run: cmake --build build --config Release -j$(nproc)
 
       - name: Upload NRO artifact
         uses: actions/upload-artifact@v4
@@ -122,7 +49,7 @@ jobs:
           name: SwitchAudiobook.nro
           path: build/SwitchAudiobook.nro
           retention-days: 30
-          if-no-files-found: ignore
+          if-no-files-found: warn
 
       - name: Create Release (on tag)
         if: startsWith(github.ref, 'refs/tags/')

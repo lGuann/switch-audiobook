@@ -16,21 +16,19 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Map=${PROJECT_NAME}.m
 
 find_package(libnx REQUIRED)
 find_package(ffmpeg QUIET)
-find_package(mpv QUIET)
-
-if(NOT ffmpeg_FOUND)
-    message(WARNING "ffmpeg not found, video decoding features disabled")
-endif()
-if(NOT mpv_FOUND)
-    message(WARNING "mpv not found, media playback features disabled")
-endif()
+find_package(mpv REQUIRED)
 find_package(borealis REQUIRED)
 find_package(curl REQUIRED)
 find_package(mbedtls REQUIRED)
+find_package(OpenSSL REQUIRED)
 find_package(zlib REQUIRED)
 find_package(bzip2 REQUIRED)
 find_package(freetype REQUIRED)
 find_package(nlohmann_json REQUIRED)
+
+if(NOT ffmpeg_FOUND)
+    message(WARNING "ffmpeg not found, video decoding features disabled")
+endif()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
@@ -38,23 +36,17 @@ set(SOURCES
     src/main.cpp
     src/core/Application.cpp
     src/core/Config.cpp
-    src/network/BiliBiliClient.cpp
-    src/network/ApiEndpoints.cpp
+    src/bilibili/BiliBiliClient.cpp
     src/network/HttpClient.cpp
     src/player/AudioPlayer.cpp
-    src/player/PlaybackController.cpp
-    src/player/MediaSource.cpp
     src/ui/MainUI.cpp
     src/ui/SearchView.cpp
     src/ui/PlayerView.cpp
     src/ui/SettingsView.cpp
     src/utils/Logger.cpp
-    src/utils/StringUtils.cpp
-    src/utils/TimeUtils.cpp
 )
 
 file(GLOB_RECURSE FONTS "${CMAKE_CURRENT_SOURCE_DIR}/assets/fonts/*.ttf")
-file(GLOB_RECURSE SHADERS "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/*.bin")
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
@@ -65,6 +57,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     mbedtls
     mbedx509
     mbedcrypto
+    OpenSSL::Crypto
     zlib
     bzip2
     freetype
@@ -89,15 +82,11 @@ add_custom_target(romfs ALL
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${CMAKE_CURRENT_SOURCE_DIR}/assets/fonts/NotoSansCJKsc-Regular.ttf
         ${CMAKE_CURRENT_BINARY_DIR}/romfs/fonts/
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/romfs/shaders
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/
-        ${CMAKE_CURRENT_BINARY_DIR}/romfs/shaders/
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/romfs
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${CMAKE_CURRENT_SOURCE_DIR}/assets/ca-bundle.crt
         ${CMAKE_CURRENT_BINARY_DIR}/romfs/
-    DEPENDS ${FONTS} ${SHADERS}
+    DEPENDS ${FONTS}
     COMMENT "Copying assets to romfs"
 )
 
