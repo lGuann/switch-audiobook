@@ -25,12 +25,14 @@ jobs:
           dkp-pacman -Q 2>/dev/null | head -50 || echo "dkp-pacman not available or no packages"
           echo "=== DevkitPro dirs ==="
           ls /opt/devkitpro/ 2>/dev/null || echo "/opt/devkitpro not found"
+          echo "=== Searching for libnxConfig.cmake ==="
+          find /opt -name "libnxConfig.cmake" 2>/dev/null || echo "libnxConfig.cmake not found in /opt"
+          find /usr -name "libnxConfig.cmake" 2>/dev/null || echo "libnxConfig.cmake not found in /usr"
 
-      - name: Try installing switch-dev (may fail due to 403)
+      - name: Try installing switch-libnx (may fail due to 403)
         run: |
-          dkp-pacman -S --noconfirm switch-dev switch-cmake switch-pkg-config 2>&1 || echo "Package install failed due to 403, trying alternative..."
-          # Try installing just libnx specifically
-          dkp-pacman -S --noconfirm switch-libnx 2>&1 || echo "switch-libnx also failed"
+          dkp-pacman -S --noconfirm switch-libnx 2>&1 || echo "switch-libnx install failed due to 403"
+          dkp-pacman -Q | grep libnx || true
 
       - name: Configure
         run: |
