@@ -15,8 +15,15 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -O2 -fPIE")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Map=${PROJECT_NAME}.map")
 
 find_package(libnx REQUIRED)
-find_package(ffmpeg REQUIRED)
-find_package(mpv REQUIRED)
+find_package(ffmpeg QUIET)
+find_package(mpv QUIET)
+
+if(NOT ffmpeg_FOUND)
+    message(WARNING "ffmpeg not found, video decoding features disabled")
+endif()
+if(NOT mpv_FOUND)
+    message(WARNING "mpv not found, media playback features disabled")
+endif()
 find_package(borealis REQUIRED)
 find_package(curl REQUIRED)
 find_package(mbedtls REQUIRED)
@@ -53,8 +60,6 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     nx
-    ffmpeg
-    mpv
     borealis
     curl
     mbedtls
@@ -66,6 +71,13 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     nlohmann_json
     ${DEVKITPRO_LIBRARIES}
 )
+
+if(ffmpeg_FOUND)
+    target_link_libraries(${PROJECT_NAME} PRIVATE ffmpeg)
+endif()
+if(mpv_FOUND)
+    target_link_libraries(${PROJECT_NAME} PRIVATE mpv)
+endif()
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
     SWITCH_AUDIOBOOK_VERSION="${PROJECT_VERSION}"
