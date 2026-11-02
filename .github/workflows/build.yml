@@ -40,7 +40,6 @@ jobs:
             switch-libjpeg-turbo \
             switch-glm \
             switch-harfbuzz \
-            switch-fribidi \
             dkp-meson-scripts \
             dkp-toolchain-vars \
             || echo "Some packages may be missing, continuing..."
