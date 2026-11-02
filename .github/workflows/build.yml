@@ -22,26 +22,6 @@ jobs:
           which aarch64-none-elf-cmake || echo "WARNING: aarch64-none-elf-cmake not found in PATH"
           echo "DEVKITPRO=${DEVKITPRO}"
 
-      - name: Try installing optional packages (may fail due to 403)
-        run: |
-          dkp-pacman -S --noconfirm \
-            switch-curl \
-            switch-mbedtls \
-            switch-zlib \
-            switch-bzip2 \
-            switch-lwext4 \
-            switch-libarchive \
-            switch-freetype \
-            switch-libpng \
-            switch-libjpeg-turbo \
-            switch-glm \
-            switch-harfbuzz \
-            dkp-meson-scripts \
-            dkp-toolchain-vars \
-            2>&1 || true
-          echo "=== Checking what's available ==="
-          dkp-pacman -Q | grep switch | head -30 || true
-
       - name: Configure
         run: |
           set -x
