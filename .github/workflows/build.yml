@@ -1,0 +1,48 @@
+name: Build Switch NRO
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: devkitpro/devkita64:latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          dkp-pacman -Sy --noconfirm
+          dkp-pacman -S --noconfirm \
+            switch-ffmpeg switch-mpv switch-sdl2 \
+            switch-curl switch-mbedtls switch-zlib \
+            switch-freetype switch-libpng switch-libjpeg-turbo \
+            switch-glm switch-harfbuzz switch-fribidi \
+            switch-bzip2 switch-lwext4 switch-libarchive \
+            dkp-meson-scripts dkp-toolchain-vars
+
+      - name: Build
+        run: |
+          mkdir build && cd build
+          cmake .. -DCMAKE_TOOLCHAIN_FILE=/opt/devkitpro/cmake/Switch.cmake
+          cmake --build . --config Release -j$(nproc)
+
+      - name: Upload NRO artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SwitchAudiobook.nro
+          path: build/SwitchAudiobook.nro
+          retention-days: 30
+
+      - name: Create Release (on tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/SwitchAudiobook.nro
+          generate_release_notes: true

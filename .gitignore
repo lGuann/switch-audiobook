@@ -1,0 +1,43 @@
+# Build artifacts
+build/
+*.nro
+*.elf
+*.nacp
+*.map
+
+# IDE/Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Build cache
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# Local config
+config.json
+*.local.*
+
+# IDE settings
+.vs/
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
