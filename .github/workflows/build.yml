@@ -42,7 +42,20 @@ jobs:
           find /opt -name "libnxConfig.cmake" 2>/dev/null || echo "libnxConfig.cmake not found in /opt"
           find /usr -name "libnxConfig.cmake" 2>/dev/null || echo "libnxConfig.cmake not found in /usr"
 
-      - name: Try installing libnx (with fallback methods)
+      - name: Verify toolchain availability
+        run: |
+          which aarch64-none-elf-g++ || echo "WARNING: aarch64-none-elf-g++ not found in PATH"
+          which aarch64-none-elf-cmake || echo "WARNING: aarch64-none-elf-cmake not found in PATH"
+          echo "DEVKITPRO=${DEVKITPRO}"
+          echo "=== Installed packages ==="
+          dkp-pacman -Q 2>/dev/null | head -50 || echo "dkp-pacman not available or no packages"
+          echo "=== DevkitPro dirs ==="
+          ls /opt/devkitpro/ 2>/dev/null || echo "/opt/devkitpro not found"
+          echo "=== Searching for libnxConfig.cmake ==="
+          find /opt -name "libnxConfig.cmake" 2>/dev/null || echo "libnxConfig.cmake not found in /opt"
+          find /usr -name "libnxConfig.cmake" 2>/dev/null || echo "libnxConfig.cmake not found in /usr"
+
+      - name: Try installing libnx (with multiple fallback methods)
         run: |
           set -e
           
